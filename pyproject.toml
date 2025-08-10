@@ -15,5 +15,5 @@ dependencies = [
     "allure-pytest>=2.15.0",
     "loguru>=0.7.3",
     "pydantic>=2.11.7",
-    "pre-commit>=4.2.0",
+    "pre-commit>=4.3.0",
 ]
