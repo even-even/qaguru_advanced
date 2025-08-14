@@ -7,10 +7,11 @@ class UsersRequest(BaseApiRequest):
     BASE_USERS_URL = "http://0.0.0.0:8000"
     USERS = "/api/users/"
 
-    def get_users_list(self, url=BASE_USERS_URL) -> Response:
+    def get_users_list(self, params: dict | None = None, url=BASE_USERS_URL) -> Response:
         return self.get(
             url=url,
-            path=self.USERS)
+            path=self.USERS,
+            params=params)
 
     def get_user_by_id(self, user_id: int, url=BASE_USERS_URL) -> Response:
         return self.get(

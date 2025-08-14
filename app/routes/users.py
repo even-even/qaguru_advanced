@@ -1,61 +1,104 @@
+import json
+from http import HTTPStatus
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
-from fastapi.params import Query
+from fastapi_pagination import Page, paginate
+from fastapi_pagination.utils import disable_installed_extensions_check
 
-from app.database import db, jobs_db
-from app.models import User, UserCreate, UserUpdate
-from tests.src.strings import USER_NOT_FOUND
+from app.models.user import User, UserCreate, UserUpdate
+
+# Отключаем предупреждения о расширениях
+disable_installed_extensions_check()
 
 router = APIRouter()
+USERS_FILE = Path(__file__).parent.parent.parent / "data" / "users.json"
+
+
+def load_users() -> list[User]:
+    """Загружаем пользователей из JSON файла"""
+    try:
+        if not USERS_FILE.exists():
+            USERS_FILE.parent.mkdir(parents=True, exist_ok=True)
+            USERS_FILE.write_text("[]")
+            return []
+
+        return [User(**user) for user in json.loads(USERS_FILE.read_text())]
+    except json.JSONDecodeError:
+        return []
+
+
+def save_users(users: list[User]) -> None:
+    """Сохраняем пользователей в JSON файл"""
+    USERS_FILE.parent.mkdir(parents=True, exist_ok=True)
+    USERS_FILE.write_text(json.dumps([user.model_dump() for user in users], indent=2))
 
 
 @router.post("/api/users/", status_code=status.HTTP_201_CREATED)
 async def create_user(user: UserCreate) -> dict:
-    new_id = max(db.keys()) + 1 if db else 1
+    users = load_users()
+    new_id = max([u.id for u in users], default=0) + 1
+
     new_user = User(
         id=new_id,
-        email=f"{user.name.lower()}@example.com",
+        email=user.email or f"{user.name.lower()}@example.com",
         first_name=user.name,
         last_name="",
         avatar=f"https://reqres.in/img/faces/{new_id}-image.jpg",
     )
-    db[new_id] = new_user
-    jobs_db[new_id] = user.job
-    return {"id": new_id, "name": user.name, "job": user.job}
+
+    users.append(new_user)
+    save_users(users)
+    return {"id": new_id, "name": user.name, "email": new_user.email, "job": getattr(user, "job", "")}
 
 
-@router.get("/api/users/{user_id}/")
-async def get_user_by_id(user_id: int) -> User:
-    if user_id not in db:
-        raise HTTPException(status_code=404, detail=USER_NOT_FOUND)
-    return db[user_id]
+@router.get("/api/users/{user_id}/", status_code=status.HTTP_200_OK)
+def get_user_by_id(user_id: int) -> User:
+    users = load_users()
+
+    if user_id < 1:
+        raise HTTPException(status_code=HTTPStatus.UNPROCESSABLE_ENTITY, detail=f"Invalid user_id {user_id}")
+    if user_id > len(users):
+        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"User {user_id} not found")
+    return users[user_id - 1]
 
 
-@router.get("/api/users/")
-async def get_users(limit: int = Query(10), offset: int = Query(0)) -> list[User]:
-    users = list(db.values())
-    return users[offset: offset + limit]
+@router.get("/api/users/", status_code=status.HTTP_200_OK)
+def get_users_list() -> Page[User]:
+    users = load_users()
+    return paginate(users)
 
 
 @router.put("/api/users/{user_id}/")
 async def update_user(user_id: int, user_data: UserUpdate) -> dict:
-    if user_id not in db:
-        raise HTTPException(status_code=404, detail=USER_NOT_FOUND)
+    users = load_users()
+    user_index = next((i for i, u in enumerate(users) if u.id == user_id), None)
 
-    user = db[user_id]
+    if user_index is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    user = users[user_index]
     if user_data.name:
         user.first_name = user_data.name
     if user_data.email:
         user.email = user_data.email
-    if user_data.job:
-        jobs_db[user_id] = user_data.job
 
-    return {"name": user.first_name, "job": jobs_db.get(user_id, ""), "email": user.email}
+    save_users(users)
+    return {"name": user.first_name, "email": user.email}
 
 
 @router.delete("/api/users/{user_id}/", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(user_id: int) -> None:
-    if user_id not in db:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=USER_NOT_FOUND)
-    db.pop(user_id)
-    jobs_db.pop(user_id, None)
+    users = load_users()
+    updated_users = [u for u in users if u.id != user_id]
+
+    if len(updated_users) == len(users):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    save_users(updated_users)
