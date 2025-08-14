@@ -1,5 +1,4 @@
 import time
-from http import HTTPStatus
 from multiprocessing import Process
 
 import pytest
@@ -8,14 +7,14 @@ import uvicorn
 from loguru import logger
 
 from app.main import app
+from tests.src import assert_helpers
 from tests.src.allure_decorators import After, Given
-from tests.src.api_client.users import UsersRequest
 
 
 @pytest.fixture(scope="function")
-def users_list():
-    response = UsersRequest().get_users_list()
-    assert response.status_code == HTTPStatus.OK
+def users_list(users_request):
+    response = users_request.get_users_list()
+    assert_helpers.check_status_code(response, 200)
     return response.json()
 
 

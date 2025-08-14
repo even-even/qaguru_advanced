@@ -1,5 +1,4 @@
 import json
-from http import HTTPStatus
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, status
@@ -57,9 +56,9 @@ def get_user_by_id(user_id: int) -> User:
     users = load_users()
 
     if user_id < 1:
-        raise HTTPException(status_code=HTTPStatus.UNPROCESSABLE_ENTITY, detail=f"Invalid user_id {user_id}")
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Invalid user_id {user_id}")
     if user_id > len(users):
-        raise HTTPException(status_code=HTTPStatus.NOT_FOUND, detail=f"User {user_id} not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User {user_id} not found")
     return users[user_id - 1]
 
 
