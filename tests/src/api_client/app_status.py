@@ -1,4 +1,4 @@
-from requests import Response
+from httpx import Response
 
 from tests.src.api_client.base_client import BaseApiRequest
 

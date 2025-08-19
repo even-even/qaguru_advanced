@@ -1,8 +1,8 @@
 import time
 from multiprocessing import Process
 
+import httpx
 import pytest
-import requests
 import uvicorn
 from loguru import logger
 
@@ -34,9 +34,9 @@ def server():
         for _ in range(10):
             time.sleep(1)
             try:
-                if requests.get(url, timeout=45).status_code < 500:
+                if httpx.get(url, timeout=45).status_code < 500:
                     break
-            except requests.RequestException as e:
+            except httpx.NetworkError as e:
                 logger.error(f"Ошибка подключения к серверу: {e}")
         else:
             msg = "Сервер не запустился"

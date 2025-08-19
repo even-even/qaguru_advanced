@@ -1,6 +1,6 @@
 from json import JSONDecodeError
 
-import requests
+import httpx
 from curlify2 import Curlify
 from loguru import logger
 
@@ -19,7 +19,7 @@ class BaseApiRequest:
 
     def request(self, method: str, url: str, path: str, *, headers: dict[str, str] | None = None,  # noqa: PLR0913
                 params: dict | None = None, data: dict | None = None, json: dict | None = None,
-                files: dict | None = None) -> requests.Response:
+                files: dict | None = None) -> httpx.Response:
         """Общий метод для выполнения HTTP-запросов.
 
         :param method: Метод HTTP-запроса (GET, POST, PUT, PATCH, DELETE).
@@ -30,7 +30,7 @@ class BaseApiRequest:
         :param data: Тело запроса (для POST/PUT/PATCH-запросов).
         :param json: JSON-тело запроса (для POST/PUT/PATCH-запросов).
         :param files: Файлы для отправки (для POST-запросов).
-        :return: Объект requests.Response с результатом запроса.
+        :return: Объект httpx.Response с результатом запроса.
         """
         final_headers = headers.copy() if headers else {}
         if self.api_key:
@@ -56,7 +56,7 @@ class BaseApiRequest:
                 kwargs_to_pass["files"] = files
 
             # Выполнение запроса
-            result = getattr(requests, method.lower())(
+            result = getattr(httpx, method.lower())(
                 url=full_url, **kwargs_to_pass)
 
             # Логирование ответа
@@ -64,31 +64,31 @@ class BaseApiRequest:
 
             return result
 
-    def get(self, url: str, path: str, params: dict | None = None) -> requests.Response:
+    def get(self, url: str, path: str, params: dict | None = None) -> httpx.Response:
         """Выполнить GET запрос"""
         return self.request(method="GET", url=url, path=path, params=params)
 
     def post(self, url: str, path: str, params: dict | None = None, data: dict | None = None,  # noqa: PLR0917, PLR0913
-             json: dict | None = None, files: dict | None = None) -> requests.Response:
+             json: dict | None = None, files: dict | None = None) -> httpx.Response:
         """Выполнить POST запрос"""
         return self.request(
             method="POST", url=url, path=path, params=params, data=data, json=json, files=files)
 
     def patch(self, url: str, path: str, data: dict | None = None, json: dict | None = None,
-              params: dict | None = None) -> requests.Response:
+              params: dict | None = None) -> httpx.Response:
         """Выполнить PATCH запрос"""
         return self.request(method="PATCH", url=url, path=path, data=data, json=json, params=params)
 
-    def put(self, url: str, path: str, data: dict | None = None, json: dict | None = None) -> requests.Response:
+    def put(self, url: str, path: str, data: dict | None = None, json: dict | None = None) -> httpx.Response:
         """Выполнить PUT запрос"""
         return self.request(method="PUT", url=url, path=path, data=data, json=json)
 
-    def delete(self, url: str, path: str, params: dict | None = None) -> requests.Response:
+    def delete(self, url: str, path: str, params: dict | None = None) -> httpx.Response:
         """Выполнить DELETE запрос"""
         return self.request(method="DELETE", url=url, path=path, params=params)
 
 
-def _log_request_result(response: requests.Response) -> None:
+def _log_request_result(response: httpx.Response) -> None:
     """Логируем информацию о запросе/ответе"""
     request_message = f"\n\t|> Запрос:\n\t{Curlify(response.request).to_curl()}\n\t"
 

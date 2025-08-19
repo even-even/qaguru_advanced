@@ -51,7 +51,7 @@ async def create_user(user: UserCreate) -> dict:
     return {"id": new_id, "name": user.name, "email": new_user.email, "job": getattr(user, "job", "")}
 
 
-@router.get("/api/users/{user_id}/", status_code=status.HTTP_200_OK)
+@router.get("/api/users/{user_id}", status_code=status.HTTP_200_OK)
 def get_user_by_id(user_id: int) -> User:
     users = load_users()
 

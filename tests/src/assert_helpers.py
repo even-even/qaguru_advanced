@@ -1,4 +1,4 @@
-from requests import Response
+from httpx import Response
 
 
 def check_status_code(response: Response, status_code: int) -> None:
