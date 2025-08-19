@@ -1,4 +1,4 @@
-from requests import Response
+from httpx import Response
 
 from tests.src.api_client.base_client import BaseApiRequest
 
@@ -7,10 +7,11 @@ class UsersRequest(BaseApiRequest):
     BASE_USERS_URL = "http://0.0.0.0:8000"
     USERS = "/api/users/"
 
-    def get_users_list(self, url=BASE_USERS_URL) -> Response:
+    def get_users_list(self, params: dict | None = None, url=BASE_USERS_URL) -> Response:
         return self.get(
             url=url,
-            path=self.USERS)
+            path=self.USERS,
+            params=params)
 
     def get_user_by_id(self, user_id: int, url=BASE_USERS_URL) -> Response:
         return self.get(
@@ -31,5 +32,5 @@ class UsersRequest(BaseApiRequest):
     def put_user_by_id(self, user_id: int, json: dict, url=BASE_USERS_URL) -> Response:
         return self.put(
             url=url,
-            path=f"{self.USERS}{user_id}",
+            path=f"{self.USERS}{user_id}/",
             json=json)
