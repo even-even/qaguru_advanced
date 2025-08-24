@@ -1,10 +1,11 @@
 import allure
+import loguru
 import pytest
 
 from tests.src import assert_helpers
 
 
-@pytest.mark.usefixtures("server")
+@pytest.mark.usefixtures("server", "fill_test_data")
 class TestGetUserById:
 
     @allure.title("Запрос пользователя по id")
@@ -12,6 +13,8 @@ class TestGetUserById:
         user_id = 12
         expected_email = "rachel.howell@reqres.in"
         expected_name = "Rachel"
+        response = users_request.get_users_list(None)
+        loguru.logger.warning(f"All users: {response.json()}")
 
         response = users_request.get_user_by_id(user_id)
         body = response.json()

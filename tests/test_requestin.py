@@ -23,7 +23,7 @@ class TestsRequestIn:
     def test_update_user(self, users_request):
         user_id = 11
         payload = {"name": "Jane Smith", "job": "Quality Assurance"}
-        response = users_request.put_user_by_id(user_id, payload, url="https://reqres.in")
+        response = users_request.patch_user(user_id, payload, url="https://reqres.in")
         assert_helpers.check_status_code(response, 200)
         assert response.json()["name"] == "Jane Smith"
         assert response.json()["job"] == "Quality Assurance"

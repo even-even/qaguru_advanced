@@ -127,3 +127,4 @@ ignore = [
 "**/{tests}/*" = ["ANN", "PLR"]
 "allure_decorators.py" = ["ANN"]
 "test_*.py" = ["ANN"]
+"main.py" = ["E402"]
