@@ -1,103 +1,58 @@
-import json
-from pathlib import Path
+from collections.abc import Iterable
 
 from fastapi import APIRouter, HTTPException, status
-from fastapi_pagination import Page, paginate
-from fastapi_pagination.utils import disable_installed_extensions_check
 
+from app.database import users
 from app.models.user import User, UserCreate, UserUpdate
 
-# Отключаем предупреждения о расширениях
-disable_installed_extensions_check()
-
-router = APIRouter()
-USERS_FILE = Path(__file__).parent.parent.parent / "data" / "users.json"
+router = APIRouter(prefix="/api/users")
 
 
-def load_users() -> list[User]:
-    """Загружаем пользователей из JSON файла"""
-    try:
-        if not USERS_FILE.exists():
-            USERS_FILE.parent.mkdir(parents=True, exist_ok=True)
-            USERS_FILE.write_text("[]")
-            return []
-
-        return [User(**user) for user in json.loads(USERS_FILE.read_text())]
-    except json.JSONDecodeError:
-        return []
+@router.post("/", status_code=status.HTTP_201_CREATED)
+def create_user(user: User) -> User:
+    UserCreate.model_validate(user.model_dump())  # явно валидируем входные параметры
+    return users.create_user(user)
 
 
-def save_users(users: list[User]) -> None:
-    """Сохраняем пользователей в JSON файл"""
-    USERS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    USERS_FILE.write_text(json.dumps([user.model_dump() for user in users], indent=2))
-
-
-@router.post("/api/users/", status_code=status.HTTP_201_CREATED)
-async def create_user(user: UserCreate) -> dict:
-    users = load_users()
-    new_id = max([u.id for u in users], default=0) + 1
-
-    new_user = User(
-        id=new_id,
-        email=user.email or f"{user.name.lower()}@example.com",
-        first_name=user.name,
-        last_name="",
-        avatar=f"https://reqres.in/img/faces/{new_id}-image.jpg",
-    )
-
-    users.append(new_user)
-    save_users(users)
-    return {"id": new_id, "name": user.name, "email": new_user.email, "job": getattr(user, "job", "")}
-
-
-@router.get("/api/users/{user_id}", status_code=status.HTTP_200_OK)
+@router.get("/{user_id}", status_code=status.HTTP_200_OK)
 def get_user_by_id(user_id: int) -> User:
-    users = load_users()
 
     if user_id < 1:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Invalid user_id {user_id}")
-    if user_id > len(users):
+    user = users.get_user(user_id)
+    if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User {user_id} not found")
-    return users[user_id - 1]
+    return user
 
 
-@router.get("/api/users/", status_code=status.HTTP_200_OK)
-def get_users_list() -> Page[User]:
-    users = load_users()
-    return paginate(users)
+@router.get("/", status_code=status.HTTP_200_OK)
+def get_users_list() -> Iterable[User]:
+    return users.get_users_list()
 
 
-@router.put("/api/users/{user_id}/")
-async def update_user(user_id: int, user_data: UserUpdate) -> dict:
-    users = load_users()
-    user_index = next((i for i, u in enumerate(users) if u.id == user_id), None)
+@router.patch("/{user_id}", status_code=status.HTTP_200_OK)
+def update_user(user_id: int, patch_data: UserUpdate) -> User:
+    """ Частичное обновление данных пользователя по заданному ID"""
+    if user_id < 1:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Неверный user_id {user_id}")
 
-    if user_index is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
+    # Получаем текущего пользователя из базы данных
+    current_user = users.get_user(user_id)
+    if not current_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Пользователь с ID {user_id} не найден.")
 
-    user = users[user_index]
-    if user_data.name:
-        user.first_name = user_data.name
-    if user_data.email:
-        user.email = user_data.email
+    # Применяем обновление
+    for key, value in patch_data.model_dump(exclude_unset=True).items():  # Исключаем необновляемые поля
+        setattr(current_user, key, value)
 
-    save_users(users)
-    return {"name": user.first_name, "email": user.email}
+    # Сохраняем изменения в базе данных
+
+    return users.update_user(user_id, current_user)
 
 
-@router.delete("/api/users/{user_id}/", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_user(user_id: int) -> None:
-    users = load_users()
-    updated_users = [u for u in users if u.id != user_id]
-
-    if len(updated_users) == len(users):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    save_users(updated_users)
+@router.delete("/{user_id}", status_code=status.HTTP_200_OK)  # если 204, то не должно быть сообщения в return
+async def delete_user(user_id: int) -> dict[str, str]:
+    if user_id < 1:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Invalid user_id {user_id}")
+    users.delete_user(user_id)
+    return {"message": f"User {user_id} deleted"}

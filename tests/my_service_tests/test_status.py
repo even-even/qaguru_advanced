@@ -5,7 +5,7 @@ from tests.src import assert_helpers
 from tests.src.api_client.app_status import AppStatusRequest
 
 
-@pytest.mark.usefixtures("server")
+@pytest.mark.usefixtures("server", "fill_test_data")
 class TestsAppStatus:
 
     @allure.title("Проверка доступности микросервиса")
