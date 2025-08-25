@@ -8,16 +8,21 @@ from tests.src import assert_helpers
 class TestGetUserById:
 
     @allure.title("Запрос пользователя по id")
-    def test_get_user_by_id(self, users_request):
-        user_id = 12
-        expected_email = "rachel.howell@reqres.in"
-        expected_name = "Rachel"
+    def test_get_user_by_id(self, create_user, users_request):
+        user_id = create_user["id"]
+        email = create_user["email"]
+        first_name = create_user["first_name"]
+        last_name = create_user["last_name"]
+        avatar = create_user["avatar"]
+
         response = users_request.get_user_by_id(user_id)
         body = response.json()
 
         assert_helpers.check_status_code(response, 200)
-        assert body["email"] == expected_email
-        assert body["first_name"] == expected_name
+        assert body["email"] == email
+        assert body["first_name"] == first_name
+        assert body["last_name"] == last_name
+        assert body["avatar"] == avatar
 
 
 @pytest.mark.usefixtures("server", "fill_test_data")

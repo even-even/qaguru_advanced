@@ -20,6 +20,6 @@ class TestDeleteUsersNegative:
 
     @allure.title("Удаление несуществующего пользователя невозможно")
     def test_deactivate_user_not_exist_404(self, users_request):
-        not_exist_role_id = 999999999
-        response = users_request.delete_user(not_exist_role_id)
+        not_exist_user_id = 999999999
+        response = users_request.delete_user(not_exist_user_id)
         assert_helpers.check_status_code(response, 404)
