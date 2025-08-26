@@ -4,7 +4,7 @@ import pytest
 from tests.src import assert_helpers
 
 
-@pytest.mark.usefixtures("server", "fill_test_data")
+@pytest.mark.usefixtures("fill_test_data")
 class TestDeleteUsers:
 
     @allure.title("Удаление пользователя")
@@ -15,7 +15,7 @@ class TestDeleteUsers:
         assert_helpers.check_status_code(response, 200)
 
 
-@pytest.mark.usefixtures("server", "fill_test_data")
+@pytest.mark.usefixtures("fill_test_data")
 class TestDeleteUsersNegative:
 
     @allure.title("Удаление несуществующего пользователя невозможно")

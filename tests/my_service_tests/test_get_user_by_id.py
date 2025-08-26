@@ -4,7 +4,7 @@ import pytest
 from tests.src import assert_helpers
 
 
-@pytest.mark.usefixtures("server", "fill_test_data")
+@pytest.mark.usefixtures("fill_test_data")
 class TestGetUserById:
 
     @allure.title("Запрос пользователя по id")
@@ -25,7 +25,7 @@ class TestGetUserById:
         assert body["avatar"] == avatar
 
 
-@pytest.mark.usefixtures("server", "fill_test_data")
+@pytest.mark.usefixtures("fill_test_data")
 class TestGetUserByIdNegative:
 
     @allure.title("Запрос несуществующего пользователя невозможен")
