@@ -1,52 +1,14 @@
 import json
-import time
-from multiprocessing import Process
 from pathlib import Path
 
-import httpx
 import pytest
-import uvicorn
-from loguru import logger
 
-from app.main import app
 from app.models.user import UserCreate
-from data.strings import APP_URL, BLACK_LIST_CODES
+from data.strings import BLACK_LIST_CODES
 from tests.src import assert_helpers
 from tests.src.allure_decorators import After, Given
 from tests.src.data_generators import get_random_string
 from tests.src.files_helper import get_root_path
-
-
-def _run_server():
-    uvicorn.run(app, host="0.0.0.0", port=8000)
-
-
-@pytest.fixture(scope="session")
-def server():
-    """Фикстура для запуска сервера"""
-    with Given("Сервер запущен"):
-        process = Process(target=_run_server, daemon=True)
-        process.start()
-
-        # Ждем пока сервер станет доступен
-        url = f"{APP_URL}/api/users/"
-
-        for attempt in range(10):
-            time.sleep(1)
-            try:
-                if httpx.get(url, timeout=45).status_code < 500:
-                    break
-            except httpx.NetworkError as err:
-                if attempt == 9:
-                    process.terminate()
-                    msg = "Сервер не запустился"
-                    raise RuntimeError(msg) from err
-
-        logger.success("Сервер успешно запущен")
-        yield
-
-        with After("Сервер выключен"):
-            process.terminate()
 
 
 @pytest.fixture(scope="session")

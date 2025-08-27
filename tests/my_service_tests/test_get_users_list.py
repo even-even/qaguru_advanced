@@ -6,7 +6,7 @@ from app.models.user import User
 from tests.src import assert_helpers
 
 
-@pytest.mark.usefixtures("server", "fill_test_data")
+@pytest.mark.usefixtures("fill_test_data")
 class TestGetUsersList:
 
     @allure.title("Запрос списка пользователей")

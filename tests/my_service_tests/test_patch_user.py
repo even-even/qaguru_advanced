@@ -5,7 +5,7 @@ from tests.src import assert_helpers
 from tests.src.data_generators import get_random_string
 
 
-@pytest.mark.usefixtures("server", "fill_test_data")
+@pytest.mark.usefixtures("fill_test_data")
 class TestsPatchUser:
 
     @allure.title("Редактирование пользователя")
@@ -30,7 +30,7 @@ class TestsPatchUser:
         assert updated_user["avatar"] == avatar_after
 
 
-@pytest.mark.usefixtures("server", "fill_test_data")
+@pytest.mark.usefixtures("fill_test_data")
 class TestsPatchUserNegative:
 
     @allure.title("Редактирование несуществующего пользователя невозможно")

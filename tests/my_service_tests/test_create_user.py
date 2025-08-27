@@ -7,7 +7,7 @@ from tests.src.allure_decorators import After
 from tests.src.data_generators import get_random_string
 
 
-@pytest.mark.usefixtures("server", "fill_test_data")
+@pytest.mark.usefixtures("fill_test_data")
 class TestCreateUser:
 
     @allure.title("Создание пользователя")
