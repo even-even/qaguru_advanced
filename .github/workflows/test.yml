@@ -1,18 +1,3 @@
-#on:
-#  pull_request:
-#    branches:
-#      - main
-#jobs:
-#  tests:
-#    name: Test app
-#    runs-on: ubuntu-latest
-#    steps:
-#      - uses: actions/checkout@v4
-#      - uses: actions/setup-python@v5
-#        with:
-#          python-version: '3.13'
-#          cache: 'uv'
-
 on:
   pull_request:
     branches:
@@ -30,15 +15,17 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
-      # установка зависимостей
+      # установка зависимостей через UV
       - run: uv sync --locked --all-extras --dev
 
-      # запуск ruff
+      # запуск линтера ruff
       - run: uv run ruff check . --output-format=github
-      # запуск typos
+      # запуск линтера typos
       - run: uv run typos .
+
       # билд и запуск
-      - run: docker compose --build # на 2 команды т.к. долгий билд. Если объединять билд и запуск, то приложение может не успеть запуститься и тесты упадут
+      - run: docker compose down -v --remove-orphans || true
+      - run: docker compose build # на 2 команды т.к. долгий билд. Если объединять билд и запуск, то приложение может не успеть запуститься и тесты упадут
       - run: docker compose up -d
 
       # запуск тестов
