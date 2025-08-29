@@ -30,14 +30,31 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v6
 
+      # установка зависимостей
       - run: uv sync --locked --all-extras --dev
 
-      - run: docker compose up -d --build
-      - run: sleep 15
+      # запуск ruff
+      - run: uv run ruff check . --output-format=github
+      # запуск typos
+      - run: uv run typos .
+      # билд и запуск
+      - run: docker compose --build # на 2 команды т.к. долгий билд. Если объединять билд и запуск, то приложение может не успеть запуститься и тесты упадут
+      - run: docker compose up -d
 
-      - run: uv run pytest tests
+      # запуск тестов
+      - run: uv run pytest tests --junit-xml=test-results.xml # (31.08.2025) TODO: перейти на allure в отчетах
         env:
           APP_URL: http://0.0.0.0:8000
 
-      - run: docker compose logs app #логируем отдельно старт работу приложения
+      - run: docker compose logs app #логируем отдельно работу приложения
         if: always()
+
+      - name: Surface failing tests
+        if: always()
+        uses: pmeier/pytest-results-action@main
+        with:
+          path: test-results.xml
+          summary: true
+          display-options: fEX
+          fail-on-empty: true
+          title: Test results
