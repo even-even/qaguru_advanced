@@ -27,6 +27,7 @@ jobs:
       - run: docker compose down -v --remove-orphans || true
       - run: docker compose build # на 2 команды т.к. долгий билд. Если объединять билд и запуск, то приложение может не успеть запуститься и тесты упадут
       - run: docker compose up -d
+      - run: sleep 15 # (31.08.2025) TODO: убрать костыль - без таймаута тесты не стартуют. Написать фикстуру опроса готовности сервиса
 
       # запуск тестов
       - run: uv run pytest tests --junit-xml=test-results.xml # (31.08.2025) TODO: перейти на allure в отчетах
