@@ -1,5 +1,9 @@
 import os
 
+import dotenv
+
+dotenv.load_dotenv()
+
 
 class AppSettings:
     """Настройки приложения через os.getenv."""

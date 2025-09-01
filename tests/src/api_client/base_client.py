@@ -27,10 +27,21 @@ class BaseApiRequest:
         self.settings = AppSettings(**settings_kwargs)
         self.base_url = self.settings.base_url  # Сохраняем базовый URL из настроек
 
-    def request(self, method: str, url: str | None = None, path: str = "", *, headers: dict[str, str] | None = None,
+    def request(self, method: str, url: str | None = None, path: str = "", headers: dict[str, str] | None = None,
                 params: dict | None = None, data: dict | None = None, json: dict | None = None,
                 files: dict | None = None) -> httpx.Response:
-        """Общий метод для выполнения HTTP-запросов."""
+        """Общий метод для выполнения HTTP-запросов.
+
+        :param method: Метод HTTP-запроса (GET, POST, PUT, PATCH, DELETE).
+        :param url: Базовый URL для выполнения запроса.
+        :param path: Путь к ресурсу на сервере.
+        :param headers: Дополнительные заголовки запроса.
+        :param params: Параметры запроса (для GET-запросов).
+        :param data: Тело запроса (для POST/PUT/PATCH-запросов).
+        :param json: JSON-тело запроса (для POST/PUT/PATCH-запросов).
+        :param files: Файлы для отправки (для POST-запросов).
+        :return: Объект httpx.Response с результатом запроса.
+        """
         final_headers = headers.copy() if headers else {}
         if self.api_key:
             final_headers["x-api-key"] = self.api_key
@@ -58,29 +69,36 @@ class BaseApiRequest:
             if method.lower() == "post":
                 kwargs_to_pass["files"] = files
 
+            # Выполнение запроса
             result = getattr(httpx, method.lower())(
                 url=full_url, **kwargs_to_pass)
 
+            # Логирование ответа
             _log_request_result(result)
             return result
 
     def get(self, path: str, url: str | None = None, params: dict | None = None) -> httpx.Response:
+        """Выполнить GET запрос"""
         return self.request(method="GET", url=url, path=path, params=params)
 
     def post(self, path: str, url: str | None = None, params: dict | None = None, data: dict | None = None,
              json: dict | None = None, files: dict | None = None) -> httpx.Response:
+        """Выполнить POST запрос"""
         return self.request(
             method="POST", url=url, path=path, params=params, data=data, json=json, files=files)
 
     def patch(self, path: str, url: str | None = None, data: dict | None = None, json: dict | None = None,
               params: dict | None = None) -> httpx.Response:
+        """Выполнить PATCH запрос"""
         return self.request(method="PATCH", url=url, path=path, data=data, json=json, params=params)
 
     def put(self, path: str, url: str | None = None, data: dict | None = None,
             json: dict | None = None) -> httpx.Response:
+        """Выполнить PUT запрос"""
         return self.request(method="PUT", url=url, path=path, data=data, json=json)
 
     def delete(self, path: str, url: str | None = None, params: dict | None = None) -> httpx.Response:
+        """Выполнить DELETE запрос"""
         return self.request(method="DELETE", url=url, path=path, params=params)
 
 
