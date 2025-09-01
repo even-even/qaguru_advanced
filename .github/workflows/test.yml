@@ -29,12 +29,11 @@ jobs:
       - run: docker compose up -d
       - run: sleep 15 # (31.08.2025) TODO: убрать костыль - без таймаута тесты не стартуют. Написать фикстуру опроса готовности сервиса
 
-      # запуск тестов
-      - run: uv run pytest tests --junit-xml=test-results.xml # (31.08.2025) TODO: перейти на allure в отчетах
-        env:
-          APP_URL: http://0.0.0.0:8000
+      # запуск тестов на dev окружении
+      - run: uv run pytest tests --junit-xml=test-results.xml --env=dev # (01.09.2025) TODO: перейти на allure в отчетах
 
-      - run: docker compose logs app #логируем отдельно работу приложения
+
+      - run: docker compose logs app # логируем отдельно работу приложения
         if: always()
 
       - name: Surface failing tests
