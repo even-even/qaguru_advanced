@@ -5,19 +5,29 @@ from curlify2 import Curlify
 from loguru import logger
 
 from tests.src.allure_decorators import Step
+from tests.src.config.settings import AppSettings
 
 
 class BaseApiRequest:
     """Базовый класс для выполнения HTTP-запросов."""
 
-    def __init__(self, api_key: str | None = "reqres-free-v1") -> None:
+    def __init__(self, api_key: str | None = "reqres-free-v1", env: str | None = None) -> None:
         """Конструктор класса, устанавливает базовые параметры для выполнения запросов.
 
         :param api_key: Обязательный хедер
+        :param env: Окружение на котором запускаются тесты (dev, stage, prod)
         """
         self.api_key = api_key
 
-    def request(self, method: str, url: str, path: str, *, headers: dict[str, str] | None = None,  # noqa: PLR0913
+        # Создаем экземпляр настроек
+        settings_kwargs = {}
+        if env is not None:
+            settings_kwargs["env"] = env
+
+        self.settings = AppSettings(**settings_kwargs)
+        self.base_url = self.settings.base_url  # Сохраняем базовый URL из настроек
+
+    def request(self, method: str, url: str | None = None, path: str = "", headers: dict[str, str] | None = None,
                 params: dict | None = None, data: dict | None = None, json: dict | None = None,
                 files: dict | None = None) -> httpx.Response:
         """Общий метод для выполнения HTTP-запросов.
@@ -35,6 +45,10 @@ class BaseApiRequest:
         final_headers = headers.copy() if headers else {}
         if self.api_key:
             final_headers["x-api-key"] = self.api_key
+
+        # Используем base_url из настроек, если url не указан явно
+        if url is None:
+            url = self.base_url
 
         full_url = f"{url}{path}"
 
@@ -61,29 +75,29 @@ class BaseApiRequest:
 
             # Логирование ответа
             _log_request_result(result)
-
             return result
 
-    def get(self, url: str, path: str, params: dict | None = None) -> httpx.Response:
+    def get(self, path: str, url: str | None = None, params: dict | None = None) -> httpx.Response:
         """Выполнить GET запрос"""
         return self.request(method="GET", url=url, path=path, params=params)
 
-    def post(self, url: str, path: str, params: dict | None = None, data: dict | None = None,  # noqa: PLR0917, PLR0913
+    def post(self, path: str, url: str | None = None, params: dict | None = None, data: dict | None = None,
              json: dict | None = None, files: dict | None = None) -> httpx.Response:
         """Выполнить POST запрос"""
         return self.request(
             method="POST", url=url, path=path, params=params, data=data, json=json, files=files)
 
-    def patch(self, url: str, path: str, data: dict | None = None, json: dict | None = None,
+    def patch(self, path: str, url: str | None = None, data: dict | None = None, json: dict | None = None,
               params: dict | None = None) -> httpx.Response:
         """Выполнить PATCH запрос"""
         return self.request(method="PATCH", url=url, path=path, data=data, json=json, params=params)
 
-    def put(self, url: str, path: str, data: dict | None = None, json: dict | None = None) -> httpx.Response:
+    def put(self, path: str, url: str | None = None, data: dict | None = None,
+            json: dict | None = None) -> httpx.Response:
         """Выполнить PUT запрос"""
         return self.request(method="PUT", url=url, path=path, data=data, json=json)
 
-    def delete(self, url: str, path: str, params: dict | None = None) -> httpx.Response:
+    def delete(self, path: str, url: str | None = None, params: dict | None = None) -> httpx.Response:
         """Выполнить DELETE запрос"""
         return self.request(method="DELETE", url=url, path=path, params=params)
 
